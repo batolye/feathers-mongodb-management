@@ -1,4 +1,8 @@
 {
-  "plugins": [ "add-module-exports" ],
-  "presets": [ "es2015" ]
+  "plugins": [
+    "add-module-exports",
+    "transform-object-assign",
+    "syntax-object-rest-spread"
+  ],
+  "presets": ["es2015"]
 }

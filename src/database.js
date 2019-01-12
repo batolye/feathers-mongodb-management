@@ -4,16 +4,11 @@ import Service from './service';
 class DatabaseService extends Service {
   constructor (options) {
     super(options);
-    if (!options || !options.db) {
+    if (!options || !options.client) {
       throw new Error('MongoDB DB options have to be provided');
     }
 
-    this.db = options.db;
-    // Use the admin database for some operations
-    this.adminDb = options.db.admin();
-    if (!this.adminDb) {
-      throw new Error('MongoDB Admin DB cannot be retrieved, ensure the connexion user has the rights to do so');
-    }
+    this.client = options.client;
   }
 
   // Helper function to process stats object
@@ -25,19 +20,22 @@ class DatabaseService extends Service {
   }
 
   createImplementation (id, options) {
-    return this.db.db(id, options).stats()
-    .then(infos => this.processObjectInfos(infos));
+    return this.client
+      .db(id, options)
+      .stats()
+      .then(infos => this.processObjectInfos(infos));
   }
 
   getImplementation (id) {
-    return Promise.resolve(this.db.db(id));
+    return Promise.resolve(this.client.db(id));
   }
 
-  listImplementation () {
-    return this.adminDb.listDatabases()
-    .then(data => {
+  listImplementation (adminDb) {
+    return adminDb.listDatabases().then(data => {
       // Get DB objects from names
-      return data.databases.map(databaseInfo => this.db.db(databaseInfo.name));
+      return data.databases.map(databaseInfo =>
+        this.client.db(databaseInfo.name)
+      );
     });
   }
 
