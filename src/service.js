@@ -1,50 +1,48 @@
-import errors from '@feathersjs/errors';
-import { filterQuery, select, sort } from '@feathersjs/adapter-commons';
-import { _ } from '@feathersjs/commons';
+import errors from "@feathersjs/errors";
+import { filterQuery, select, sort } from "@feathersjs/adapter-commons";
+import { _ } from "@feathersjs/commons";
 
-console.log('log: _.isObject', _.isObject);
 const _isObject = _.isObject;
-console.log('log: _isObject', _isObject);
 
 const specialFilters = {
-  $in (key, ins) {
+  $in(key, ins) {
     return current => ins.indexOf(current[key]) !== -1;
   },
 
-  $nin (key, nins) {
+  $nin(key, nins) {
     return current => nins.indexOf(current[key]) === -1;
   },
 
-  $lt (key, value) {
+  $lt(key, value) {
     return current => current[key] < value;
   },
 
-  $lte (key, value) {
+  $lte(key, value) {
     return current => current[key] <= value;
   },
 
-  $gt (key, value) {
+  $gt(key, value) {
     return current => current[key] > value;
   },
 
-  $gte (key, value) {
+  $gte(key, value) {
     return current => current[key] >= value;
   },
 
-  $ne (key, value) {
+  $ne(key, value) {
     return current => current[key] !== value;
   }
 };
-function matcher (originalQuery) {
-  const query = _.omit(originalQuery, '$limit', '$skip', '$sort', '$select');
+function matcher(originalQuery) {
+  const query = _.omit(originalQuery, "$limit", "$skip", "$sort", "$select");
 
-  return function (item) {
+  return function(item) {
     if (query.$or && _.some(query.$or, or => matcher(or)(item))) {
       return true;
     }
 
     return _.every(query, (value, key) => {
-      if (value !== null && typeof value === 'object') {
+      if (value !== null && typeof value === "object") {
         return _.every(value, (target, filterType) => {
           if (specialFilters[filterType]) {
             const filter = specialFilters[filterType](key, target);
@@ -53,7 +51,7 @@ function matcher (originalQuery) {
 
           return false;
         });
-      } else if (typeof item[key] !== 'undefined') {
+      } else if (typeof item[key] !== "undefined") {
         return item[key] === query[key];
       }
 
@@ -64,7 +62,7 @@ function matcher (originalQuery) {
 
 // Create the base service.
 class Service {
-  constructor (options) {
+  constructor(options) {
     this.paginate = options.paginate || {};
     this._matcher = options.matcher || matcher;
     this._sorter = options.sorter || sort;
@@ -72,7 +70,7 @@ class Service {
 
   // Find without hooks and mixins that can be used internally and always returns
   // a pagination object
-  _find (params, getFilter = filterQuery) {
+  _find(params, getFilter = filterQuery) {
     const { query, filters } = getFilter(params.query || {});
     const adminDb = params.adminDb;
     // first get all items
@@ -80,7 +78,7 @@ class Service {
       .then(items => {
         let infosPromises = items.map(item => {
           // Then get stats/infos for all items if possible
-          if (typeof item.stats === 'function') {
+          if (typeof item.stats === "function") {
             return item.stats();
           } else {
             return Promise.resolve(item);
@@ -103,7 +101,7 @@ class Service {
           values = values.slice(filters.$skip);
         }
 
-        if (typeof filters.$limit !== 'undefined') {
+        if (typeof filters.$limit !== "undefined") {
           values = values.slice(0, filters.$limit);
         }
 
@@ -120,9 +118,9 @@ class Service {
       });
   }
 
-  find (params) {
+  find(params) {
     const paginate =
-      typeof params.paginate !== 'undefined' ? params.paginate : this.paginate;
+      typeof params.paginate !== "undefined" ? params.paginate : this.paginate;
     // Call the internal find with query parameter that include pagination
     const result = this._find(params, query => filterQuery(query, paginate));
 
@@ -134,11 +132,11 @@ class Service {
   }
 
   // Create without hooks and mixins that can be used internally
-  _create (data, params) {
+  _create(data, params) {
     let name = data.name;
     if (!name) {
       return Promise.reject(
-        new errors.BadRequest('Missing required name to create a collection')
+        new errors.BadRequest("Missing required name to create a collection")
       );
     }
 
@@ -149,7 +147,7 @@ class Service {
     );
   }
 
-  create (data, params) {
+  create(data, params) {
     if (Array.isArray(data)) {
       return Promise.all(data.map(current => this._create(current)));
     }
@@ -158,7 +156,7 @@ class Service {
   }
 
   // Remove without hooks and mixins that can be used internally
-  _remove (idOrInfos, params) {
+  _remove(idOrInfos, params) {
     let itemPromise;
     if (_isObject(idOrInfos)) {
       itemPromise = this.getImplementation(idOrInfos.name);
@@ -188,7 +186,7 @@ class Service {
     });
   }
 
-  remove (id, params) {
+  remove(id, params) {
     if (id === null) {
       return this._find(params).then(page =>
         Promise.all(
